@@ -1,6 +1,7 @@
 <template>
   <v-container>
     <v-navigation-drawer v-model="drawer" app>
+      <SmallProfileCard/>
       <v-list dense>
         <v-list-item link to="/">
           <v-list-item-action>
@@ -35,14 +36,21 @@
     </v-content>
     <v-footer color="indigo" app>
       <span class="white--text"> I.Komar 2020</span>
+      <Button/>
     </v-footer>
   </v-container>
 </template>
 
 <script>
+import Button from '@/components/Button'
+import SmallProfileCard from '@/components/SmallProfileCard'
 export default {
   props: {
     source: String
+  },
+  components: {
+    Button,
+    SmallProfileCard
   },
   data: () => ({
     drawer: null

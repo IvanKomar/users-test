@@ -75,8 +75,8 @@ export default {
     },
     ...mapMutations(['hideModal']),
     async getUserDataForModal (id) {
-      await this.$store.dispatch('fetchUser', id)
       this.$store.dispatch('showDialog', { type: 'edit', id })
+      await this.$store.dispatch('fetchUser', id)
     }
   }
 }

@@ -8,7 +8,7 @@ export default new Vuex.Store({
     users: [],
     totalPages: 0,
     currentPage: 0,
-    currentUser: {},
+    currentUser: null,
     showModal: false,
     modalType: '',
     loading: true
@@ -19,6 +19,10 @@ export default new Vuex.Store({
       state.totalPages = users.total_pages
       state.currentPage = users.page
     },
+    addNewUser (state, data) {
+      const user = { id: +data.id, email: data.email || '', first_name: data.name, last_name: '', avatar: 'https://via.placeholder.com/600/24f355', company: data.job, text: '', url: '' }
+      state.users = [...state.users, user]
+    },
     setError (state, error) {
       state.error = error
     },
@@ -27,6 +31,7 @@ export default new Vuex.Store({
     },
     deleteUserById (state, deletedUserId) {
       state.users = state.users.filter(user => user.id !== deletedUserId)
+      state.currentUser = null
     },
     updateUserById (state, updatedUserData) {
       state.users = state.users.map(user => {
@@ -63,10 +68,20 @@ export default new Vuex.Store({
         throw e
       }
     },
-    async fetchUser ({ dispatch, commit }, id) {
+    async addUser ({ dispatch, commit }, data) {
+      try {
+        const response = await axios.post('https://reqres.in/api/users', data)
+        await commit('addNewUser', response.data)
+        commit('setLoaded')
+      } catch (e) {
+        commit('setError', e)
+        throw e
+      }
+    },
+    async fetchUser ({ dispatch, commit, getters }, id) {
       commit('setLoading')
       try {
-        const response = await axios.get(`https://reqres.in/api/users/${id}`)
+        const response = await axios.get(`https://reqres.in/api/users/${id}?delay=3`)
         if (response.status === 200) {
           await commit('setUserById', response.data)
           commit('setLoaded')
@@ -87,7 +102,7 @@ export default new Vuex.Store({
         throw e
       }
     },
-    async updateUser ({ dispatch, commit }, data) {
+    async updateUser ({ dispatch, commit, getters }, data) {
       commit('setLoading')
       try {
         await axios.put(`https://reqres.in/api/users/${data.id}`, data)
