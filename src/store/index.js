@@ -5,7 +5,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    users: [],
+    users: null,
     totalPages: 0,
     currentPage: 0,
     currentUser: null,
@@ -20,14 +20,26 @@ export default new Vuex.Store({
       state.currentPage = users.page
     },
     addNewUser (state, data) {
-      const user = { id: +data.id, email: data.email || '', first_name: data.name, last_name: '', avatar: 'https://via.placeholder.com/600/24f355', company: data.job, text: '', url: '' }
+      const user = {
+        id: data.id,
+        email: data.email || '',
+        first_name: data.name,
+        last_name: '',
+        avatar: 'https://via.placeholder.com/600/24f355',
+        company: data.job,
+        text: '',
+        url: ''
+      }
       state.users = [...state.users, user]
     },
     setError (state, error) {
       state.error = error
     },
     setUserById (state, user) {
-      state.currentUser = { ...user.data, ...user.ad }
+      if (user.data && user.ad) {
+        state.currentUser = { ...user.data, ...user.ad }
+      }
+      state.currentUser = user
     },
     deleteUserById (state, deletedUserId) {
       state.users = state.users.filter(user => user.id !== deletedUserId)
@@ -57,15 +69,20 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    async fetchUsers ({ dispatch, commit }, page = 1) {
+    async fetchUsers ({ dispatch, commit, getters }, page = 1) {
       commit('setLoading')
-      try {
-        const response = await axios.get(`https://reqres.in/api/users?page=${page}&delay=3`)
-        commit('setUsersData', response.data)
+      if (!getters.getUsersList) {
+        try {
+          const response = await axios.get(`https://reqres.in/api/users?page=${page}&delay=3`)
+          commit('setUsersData', response.data)
+          commit('setLoaded')
+        } catch (e) {
+          commit('setError', e)
+          throw e
+        }
+      } else {
+        commit('setUsersData', { data: getters.getUsersList, total_pages: getters.getPages.totalPages, page: getters.getPages.currentPage })
         commit('setLoaded')
-      } catch (e) {
-        commit('setError', e)
-        throw e
       }
     },
     async addUser ({ dispatch, commit }, data) {
@@ -79,23 +96,29 @@ export default new Vuex.Store({
       }
     },
     async fetchUser ({ dispatch, commit, getters }, id) {
+      const user = getters.getUsersList.find(user => user.id === id)
       commit('setLoading')
-      try {
-        const response = await axios.get(`https://reqres.in/api/users/${id}?delay=3`)
-        if (response.status === 200) {
-          await commit('setUserById', response.data)
-          commit('setLoaded')
+      if (!user) {
+        try {
+          const response = await axios.get(`https://reqres.in/api/users/${id}?delay=3`)
+          if (response.status === 200) {
+            await commit('setUserById', response.data)
+            commit('setLoaded')
+          }
+        } catch (e) {
+          commit('setError', e)
+          throw e
         }
-      } catch (e) {
-        commit('setError', e)
-        throw e
+      } else {
+        await commit('setUserById', user)
+        commit('setLoaded')
       }
     },
     async deleteUser ({ dispatch, commit }, id) {
       commit('setLoading')
       try {
-        await axios.delete(`https://reqres.in/api/users/${id}`)
         commit('deleteUserById', id)
+        axios.delete(`https://reqres.in/api/users/${id}`)
         commit('setLoaded')
       } catch (e) {
         commit('setError', e)

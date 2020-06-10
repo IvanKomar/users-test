@@ -89,7 +89,7 @@ export default {
     async formSubmit () {
       if (this.$refs.form.validate()) {
         await this.$store.dispatch(this.getModalType === 'edit' ? 'updateUser' : 'addUser', {
-          id: this.getCurrentUser.id,
+          id: this.getModalType === 'edit' ? this.getCurrentUser.id : Date.now(),
           name: this.name,
           job: this.company
         })
